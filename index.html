@@ -845,10 +845,14 @@
   /* ================= GAME LOGIC ================= */
 
   function buildRevealOrder(answer) {
-    // Flat left-to-right order of indices of non-space characters
+    // Indices of non-space characters, shuffled into a random reveal order
     const order = [];
     for (let i = 0; i < answer.length; i++) {
       if (answer[i] !== ' ') order.push(i);
+    }
+    for (let i = order.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [order[i], order[j]] = [order[j], order[i]];
     }
     return order;
   }
