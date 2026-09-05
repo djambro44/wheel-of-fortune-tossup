@@ -1,13 +1,13 @@
 # Wheel of Fortune: Toss-Up Showdown
 
-A single-page, single-HTML-file recreation of Wheel of Fortune's "Toss-Up" round, built for in-person team building events. Run it on a laptop, mirror it to a TV or projector, and use it to host a 4-round buzz-in trivia game between 2-6 teams.
+A single-page, single-HTML-file recreation of Wheel of Fortune's "Toss-Up" round, built for in-person team building events. Run it on a laptop, mirror it to a TV or projector, and use it to host a 4-round buzz-in trivia game between 2-10 teams.
 
 No backend, no build step, no dependencies — everything runs in the browser in memory.
 
 ## Features
 
 - 4 rounds, one puzzle (category + answer) per round
-- 2-6 teams with editable names
+- 2-10 teams with editable names
 - Letters reveal one at a time on a customizable timer
 - Any team can buzz in at any point after reveal starts
 - Host manually judges each buzz-in as Correct/Incorrect

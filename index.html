@@ -507,7 +507,7 @@
           <button class="btn btn-outline btn-sm" id="addTeamBtn">+ Add Team</button>
         </div>
       </div>
-      <p style="color:#a9b3ee; font-size:0.85rem;">2–6 teams supported.</p>
+      <p style="color:#a9b3ee; font-size:0.85rem;">2–10 teams supported.</p>
       <div id="teamInputs" style="display:flex; flex-direction:column; gap:8px;"></div>
     </div>
 
@@ -626,7 +626,7 @@
     { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' }
   ];
 
-  const TEAM_COLORS = ['#ff6b6b', '#4dd0e1', '#ffd447', '#7ed957', '#c792ea', '#ff9f43'];
+  const TEAM_COLORS = ['#ff6b6b', '#4dd0e1', '#ffd447', '#7ed957', '#c792ea', '#ff9f43', '#5b9dff', '#ff6ec7', '#a3e635', '#f97362'];
 
   /* ================= DOM refs ================= */
   const $ = (id) => document.getElementById(id);
@@ -724,7 +724,7 @@
       });
     });
     $('removeTeamBtn').disabled = state.teams.length <= 2;
-    $('addTeamBtn').disabled = state.teams.length >= 6;
+    $('addTeamBtn').disabled = state.teams.length >= 10;
   }
 
   function renderPointsInputs() {
@@ -772,7 +772,7 @@
   });
 
   $('addTeamBtn').addEventListener('click', () => {
-    if (state.teams.length >= 6) return;
+    if (state.teams.length >= 10) return;
     state.teams.push({ name: `Team ${state.teams.length + 1}`, score: 0 });
     renderTeamInputs();
     validateSetup();
