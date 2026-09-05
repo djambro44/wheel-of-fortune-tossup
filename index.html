@@ -1,0 +1,1194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wheel of Fortune: Toss-Up Showdown</title>
+<style>
+  :root {
+    --navy-dark: #050b33;
+    --navy: #0a1660;
+    --navy-mid: #101f7a;
+    --gold: #ffd447;
+    --gold-dark: #caa227;
+    --gold-text: #3a2a00;
+    --red: #e5344a;
+    --green: #2ecc71;
+    --panel: #0d1550;
+    --panel-border: #2a3aa0;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--navy-dark);
+    color: #fff;
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    overflow-x: hidden;
+  }
+
+  #app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- Generic layout ---------- */
+  .screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(12px, 2vw, 28px);
+    gap: clamp(10px, 1.5vw, 20px);
+  }
+  [hidden] { display: none !important; }
+
+  h1, h2, h3 { margin: 0; }
+
+  .title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .title-row h1 {
+    font-size: clamp(1.4rem, 3vw, 2.4rem);
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-shadow: 0 0 12px rgba(255,212,71,0.4);
+  }
+
+  .btn {
+    font-family: inherit;
+    font-weight: 700;
+    font-size: clamp(0.85rem, 1.1vw, 1.05rem);
+    padding: 0.7em 1.3em;
+    border-radius: 10px;
+    border: 2px solid var(--panel-border);
+    background: var(--panel);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-gold {
+    background: linear-gradient(180deg, var(--gold), var(--gold-dark));
+    color: var(--gold-text);
+    border-color: var(--gold-dark);
+  }
+  .btn-green {
+    background: linear-gradient(180deg, #3fdc7c, #1e9e52);
+    color: #043016;
+    border-color: #1e9e52;
+  }
+  .btn-red {
+    background: linear-gradient(180deg, #ff6b7a, #c81e35);
+    color: #3a0009;
+    border-color: #c81e35;
+  }
+  .btn-outline {
+    background: transparent;
+  }
+  .btn-sm { padding: 0.45em 0.9em; font-size: 0.8rem; border-radius: 8px; }
+
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .spacer { flex: 1; }
+
+  .card {
+    background: var(--panel);
+    border: 2px solid var(--panel-border);
+    border-radius: 14px;
+    padding: clamp(12px, 1.6vw, 22px);
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a9b3ee;
+    margin-bottom: 4px;
+  }
+
+  input[type=text], input[type=number] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0.55em 0.7em;
+    border-radius: 8px;
+    border: 2px solid var(--panel-border);
+    background: #0a1240;
+    color: #fff;
+  }
+  input[type=text]:focus, input[type=number]:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  /* ---------- Setup screen ---------- */
+  .tabs { display: flex; gap: 8px; }
+  .tab-btn {
+    background: transparent;
+    border: 2px solid var(--panel-border);
+    color: #cfd6ff;
+    padding: 0.55em 1.2em;
+    border-radius: 10px 10px 0 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+  }
+  .tab-btn.active { background: var(--panel); color: var(--gold); border-bottom-color: var(--panel); }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .puzzle-card { display: flex; flex-direction: column; gap: 8px; }
+  .puzzle-card .badge {
+    align-self: flex-start;
+    background: var(--gold);
+    color: var(--gold-text);
+    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+  }
+
+  .team-row { display: flex; gap: 8px; align-items: center; }
+  .team-row input { flex: 1; }
+  .team-color-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 700px) { .settings-grid { grid-template-columns: repeat(2, 1fr); } }
+
+  .validation-msg {
+    color: #ffb3b3;
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+
+  /* ---------- Game screen ---------- */
+  #gameScreen { position: relative; }
+
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .round-badge {
+    font-size: clamp(1rem, 1.6vw, 1.3rem);
+    font-weight: 800;
+    color: var(--gold);
+    border: 2px solid var(--gold);
+    border-radius: 10px;
+    padding: 4px 14px;
+  }
+  .points-badge {
+    font-size: clamp(1rem, 1.6vw, 1.3rem);
+    font-weight: 800;
+    background: var(--gold);
+    color: var(--gold-text);
+    border-radius: 10px;
+    padding: 4px 14px;
+  }
+  .category-display {
+    text-align: center;
+    font-size: clamp(1.1rem, 2.4vw, 1.9rem);
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .category-display span {
+    color: var(--gold);
+  }
+
+  .scoreboard {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .score-card {
+    background: var(--panel);
+    border: 2px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 8px 16px;
+    min-width: 110px;
+    text-align: center;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  }
+  .score-card .name {
+    font-weight: 700;
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .score-card .pts {
+    font-size: clamp(1.1rem, 1.8vw, 1.6rem);
+    font-weight: 800;
+    color: var(--gold);
+  }
+  .score-card.leader { border-color: var(--gold); box-shadow: 0 0 14px rgba(255,212,71,0.5); }
+  .score-card.locked { opacity: 0.45; }
+  .score-card.buzzed { border-color: #fff; transform: scale(1.05); box-shadow: 0 0 18px rgba(255,255,255,0.6); }
+  .score-card.winner { border-color: var(--green); box-shadow: 0 0 22px rgba(46,204,113,0.8); }
+  .score-card .out-tag {
+    display: inline-block;
+    margin-top: 2px;
+    font-size: 0.65rem;
+    color: var(--red);
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+
+  /* Puzzle board */
+  .board-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(10px, 3vw, 30px);
+  }
+  .board {
+    background: radial-gradient(ellipse at center, var(--navy-mid) 0%, var(--navy) 70%, var(--navy-dark) 100%);
+    border: 6px solid var(--gold);
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0,0,20,0.6), inset 0 0 30px rgba(0,0,0,0.4);
+    padding: clamp(16px, 3vw, 40px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.4vw, 16px);
+    align-items: center;
+    max-width: 100%;
+  }
+  .board-line {
+    display: flex;
+    gap: clamp(6px, 1vw, 14px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .word-group {
+    display: flex;
+    gap: clamp(3px, 0.5vw, 7px);
+  }
+  .tile {
+    width: clamp(28px, 5vw, 62px);
+    height: clamp(36px, 6.5vw, 76px);
+    background: var(--gold);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: clamp(1rem, 3vw, 2.4rem);
+    color: var(--navy-dark);
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,0.25), 0 2px 4px rgba(0,0,0,0.4);
+    perspective: 400px;
+  }
+  .tile.blank {
+    background: var(--navy-mid);
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
+  }
+  .tile.reveal-anim {
+    animation: flipPop 0.5s ease;
+  }
+  @keyframes flipPop {
+    0%   { transform: rotateX(90deg) scale(0.6); opacity: 0.2; }
+    55%  { transform: rotateX(-18deg) scale(1.12); opacity: 1; }
+    100% { transform: rotateX(0deg) scale(1); opacity: 1; }
+  }
+
+  .solved-flash {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 30;
+    background: rgba(2, 5, 30, 0.72);
+    border-radius: 14px;
+    text-align: center;
+    padding: 20px;
+  }
+  .solved-flash span {
+    font-size: clamp(1.4rem, 4.2vw, 3.4rem);
+    font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 30px rgba(255,212,71,0.9), 0 0 60px rgba(255,212,71,0.6);
+    animation: popIn 0.6s cubic-bezier(.2,1.4,.4,1);
+    white-space: normal;
+    max-width: 90%;
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.2) rotate(-8deg); opacity: 0; }
+    60% { transform: scale(1.15) rotate(2deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  /* Controls */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .buzz-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    width: 100%;
+    max-width: 1100px;
+  }
+  .buzz-btn {
+    font-family: inherit;
+    font-weight: 800;
+    font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+    padding: 0.9em 0.6em;
+    border-radius: 12px;
+    border: 3px solid var(--panel-border);
+    background: var(--panel);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .buzz-btn:hover:not(:disabled) { transform: translateY(-2px); background: #16217a; }
+  .buzz-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .buzz-btn.active-judging { background: #fff; color: var(--navy-dark); border-color: #fff; }
+
+  .judge-panel {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--panel);
+    border: 2px solid #fff;
+    border-radius: 14px;
+    padding: 14px 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .judge-panel .who {
+    font-weight: 800;
+    font-size: clamp(1rem, 1.6vw, 1.4rem);
+  }
+
+  .progress-bar {
+    width: 100%;
+    max-width: 500px;
+    height: 8px;
+    border-radius: 4px;
+    background: var(--panel);
+    overflow: hidden;
+    border: 1px solid var(--panel-border);
+  }
+  .progress-bar .fill {
+    height: 100%;
+    background: var(--gold);
+    width: 0%;
+    transition: width 0.2s linear;
+  }
+
+  .bottom-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .corner-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  /* Game over screen */
+  #gameOverScreen { align-items: center; justify-content: center; text-align: center; }
+  .winner-name {
+    font-size: clamp(1.8rem, 5vw, 4rem);
+    color: var(--gold);
+    font-weight: 900;
+    text-shadow: 0 0 20px rgba(255,212,71,0.6);
+  }
+  .final-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+    width: min(500px, 90vw);
+  }
+  .final-score-row {
+    display: flex;
+    justify-content: space-between;
+    background: var(--panel);
+    border: 2px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .final-score-row.first { border-color: var(--gold); box-shadow: 0 0 16px rgba(255,212,71,0.5); }
+
+  /* confetti */
+  .confetti-piece {
+    position: fixed;
+    top: -20px;
+    width: 10px;
+    height: 16px;
+    opacity: 0.95;
+    z-index: 999;
+    pointer-events: none;
+    animation-name: confettiFall;
+    animation-timing-function: cubic-bezier(.3,.6,.7,1);
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(540deg); opacity: 0.9; }
+  }
+
+  footer.hint {
+    text-align: center;
+    font-size: 0.75rem;
+    color: #7986cc;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ SETUP SCREEN ============ -->
+  <div class="screen" id="setupScreen">
+    <div class="title-row">
+      <h1>🎡 WHEEL OF FORTUNE — TOSS-UP SHOWDOWN</h1>
+      <div class="row">
+        <button class="btn btn-outline btn-sm" id="loadSampleBtn">Load Sample Puzzles</button>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="puzzles">1. Puzzles</button>
+      <button class="tab-btn" data-tab="teams">2. Teams</button>
+      <button class="tab-btn" data-tab="settings">3. Settings</button>
+    </div>
+
+    <div class="card" id="puzzlesTab">
+      <h2 style="margin-bottom:10px;">Enter the 4 Toss-Up Puzzles</h2>
+      <div class="setup-grid" id="puzzleInputs"></div>
+    </div>
+
+    <div class="card" id="teamsTab" hidden>
+      <div class="row" style="justify-content:space-between;">
+        <h2>Teams</h2>
+        <div class="row">
+          <button class="btn btn-outline btn-sm" id="removeTeamBtn">− Remove Team</button>
+          <button class="btn btn-outline btn-sm" id="addTeamBtn">+ Add Team</button>
+        </div>
+      </div>
+      <p style="color:#a9b3ee; font-size:0.85rem;">2–6 teams supported.</p>
+      <div id="teamInputs" style="display:flex; flex-direction:column; gap:8px;"></div>
+    </div>
+
+    <div class="card" id="settingsTab" hidden>
+      <h2 style="margin-bottom:10px;">Game Settings</h2>
+      <h3 style="color:#a9b3ee; font-size:0.9rem; margin-bottom:6px;">Points per Round</h3>
+      <div class="settings-grid" id="pointsInputs"></div>
+      <div style="height:16px;"></div>
+      <h3 style="color:#a9b3ee; font-size:0.9rem; margin-bottom:6px;">Letter Reveal Speed</h3>
+      <div style="max-width:240px;">
+        <label for="revealSpeedInput">Seconds between letters</label>
+        <input type="number" id="revealSpeedInput" min="0.3" max="10" step="0.1" value="2">
+      </div>
+    </div>
+
+    <div class="validation-msg" id="validationMsg"></div>
+
+    <div class="row" style="justify-content:center;">
+      <button class="btn btn-gold" id="startGameBtn" style="font-size:1.2rem; padding:0.8em 2.2em;">▶ Start Game</button>
+    </div>
+
+    <footer class="hint">Runs entirely in your browser — nothing is saved or sent anywhere. Refreshing the page resets the game.</footer>
+  </div>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <div class="screen" id="gameScreen" hidden>
+    <div class="corner-actions">
+      <button class="btn btn-outline btn-sm" id="editSetupBtn">⚙ Edit Setup</button>
+      <button class="btn btn-outline btn-sm" id="restartBtn">↺ Restart Game</button>
+    </div>
+    <div class="top-bar">
+      <div class="round-badge" id="roundBadge">ROUND 1 OF 4</div>
+      <div class="category-display" id="categoryDisplay">Category: <span id="categoryText">—</span></div>
+      <div class="points-badge" id="pointsBadge">1000 PTS</div>
+    </div>
+
+    <div class="scoreboard" id="scoreboard"></div>
+
+    <div class="board-wrap" style="position:relative;">
+      <div class="board" id="board"></div>
+      <div class="solved-flash" id="solvedFlash" hidden><span id="solvedFlashText">CORRECT!</span></div>
+    </div>
+
+    <div class="progress-bar" style="align-self:center;">
+      <div class="fill" id="progressFill"></div>
+    </div>
+
+    <div class="controls">
+      <div class="judge-panel" id="judgePanel" hidden>
+        <div class="who" id="judgeWho">Team X buzzed in!</div>
+        <button class="btn btn-green" id="judgeCorrectBtn">✔ Correct</button>
+        <button class="btn btn-red" id="judgeIncorrectBtn">✘ Incorrect</button>
+      </div>
+
+      <div class="buzz-grid" id="buzzGrid"></div>
+
+      <div class="bottom-actions">
+        <button class="btn btn-gold" id="startRoundBtn">▶ Start Round</button>
+        <button class="btn btn-outline" id="pauseResumeBtn" hidden>⏸ Pause</button>
+        <button class="btn btn-outline" id="revealAnswerBtn" hidden>👁 Reveal Answer</button>
+        <button class="btn btn-green" id="nextRoundBtn" hidden>Next Round ▶</button>
+        <button class="btn btn-green" id="finishGameBtn" hidden>Finish Game 🏁</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ GAME OVER SCREEN ============ -->
+  <div class="screen" id="gameOverScreen" hidden>
+    <h1 style="color:var(--gold); text-align:center;">🏆 GAME OVER 🏆</h1>
+    <div class="winner-name" id="winnerName"></div>
+    <div class="final-scores" id="finalScores"></div>
+    <div class="row" style="justify-content:center;">
+      <button class="btn btn-gold" id="playAgainBtn">↺ Play Again (Same Setup)</button>
+      <button class="btn btn-outline" id="newSetupBtn">⚙ New Setup</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ================= STATE ================= */
+  const state = {
+    teams: [
+      { name: 'Team 1', score: 0 },
+      { name: 'Team 2', score: 0 },
+      { name: 'Team 3', score: 0 },
+      { name: 'Team 4', score: 0 }
+    ],
+    puzzles: [
+      { category: '', answer: '' },
+      { category: '', answer: '' },
+      { category: '', answer: '' },
+      { category: '', answer: '' }
+    ],
+    points: [1000, 2000, 3000, 4000],
+    revealSpeedMs: 2000,
+
+    // in-game runtime state
+    currentRound: 0, // 0-indexed
+    roundPhase: 'ready', // ready | revealing | paused | resolved
+    revealOrder: [],   // array of tile indices in reveal order
+    revealPos: 0,      // how many revealed so far
+    lockedOut: new Set(),
+    activeBuzzTeam: null,
+    timerId: null,
+    winnerTeamIndex: null
+  };
+
+  const SAMPLE_PUZZLES = [
+    { category: 'Around the House', answer: 'KITCHEN TABLE' },
+    { category: 'Movie Title', answer: 'THE GOLDEN COMPASS' },
+    { category: 'Food & Drink', answer: 'PEANUT BUTTER SANDWICH' },
+    { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' }
+  ];
+
+  const TEAM_COLORS = ['#ff6b6b', '#4dd0e1', '#ffd447', '#7ed957', '#c792ea', '#ff9f43'];
+
+  /* ================= DOM refs ================= */
+  const $ = (id) => document.getElementById(id);
+
+  const setupScreen = $('setupScreen');
+  const gameScreen = $('gameScreen');
+  const gameOverScreen = $('gameOverScreen');
+
+  const puzzleInputs = $('puzzleInputs');
+  const teamInputs = $('teamInputs');
+  const pointsInputs = $('pointsInputs');
+  const revealSpeedInput = $('revealSpeedInput');
+  const validationMsg = $('validationMsg');
+
+  /* ================= AUDIO (WebAudio, no files) ================= */
+  let audioCtx = null;
+  function getAudioCtx() {
+    if (!audioCtx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (AC) audioCtx = new AC();
+    }
+    return audioCtx;
+  }
+  function beep(freq, durationMs, type, volume, delayMs) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const startAt = ctx.currentTime + (delayMs || 0) / 1000;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, startAt);
+    gain.gain.setValueAtTime(volume || 0.15, startAt);
+    gain.gain.exponentialRampToValueAtTime(0.001, startAt + durationMs / 1000);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(startAt);
+    osc.stop(startAt + durationMs / 1000 + 0.02);
+  }
+  function playBuzzSound() { beep(320, 180, 'square', 0.18); }
+  function playCorrectSound() {
+    beep(523, 140, 'triangle', 0.18, 0);
+    beep(659, 140, 'triangle', 0.18, 130);
+    beep(784, 260, 'triangle', 0.2, 260);
+  }
+  function playIncorrectSound() {
+    beep(200, 220, 'sawtooth', 0.15, 0);
+    beep(140, 260, 'sawtooth', 0.15, 150);
+  }
+  function playTickSound() { beep(880, 40, 'square', 0.05); }
+
+  /* ================= SETUP SCREEN LOGIC ================= */
+
+  function renderPuzzleInputs() {
+    puzzleInputs.innerHTML = '';
+    state.puzzles.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'card puzzle-card';
+      div.innerHTML = `
+        <span class="badge">ROUND ${i + 1}</span>
+        <label>Category</label>
+        <input type="text" data-idx="${i}" class="categoryInput" placeholder="e.g. Around the House" value="${escapeAttr(p.category)}">
+        <label>Answer</label>
+        <input type="text" data-idx="${i}" class="answerInput" placeholder="e.g. Kitchen Table" value="${escapeAttr(p.answer)}">
+      `;
+      puzzleInputs.appendChild(div);
+    });
+    puzzleInputs.querySelectorAll('.categoryInput').forEach(el => {
+      el.addEventListener('input', (e) => {
+        state.puzzles[+e.target.dataset.idx].category = e.target.value;
+        validateSetup();
+      });
+    });
+    puzzleInputs.querySelectorAll('.answerInput').forEach(el => {
+      el.addEventListener('input', (e) => {
+        state.puzzles[+e.target.dataset.idx].answer = e.target.value;
+        validateSetup();
+      });
+    });
+  }
+
+  function renderTeamInputs() {
+    teamInputs.innerHTML = '';
+    state.teams.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'team-row';
+      div.innerHTML = `
+        <span class="team-color-dot" style="background:${TEAM_COLORS[i % TEAM_COLORS.length]}"></span>
+        <input type="text" data-idx="${i}" class="teamNameInput" placeholder="Team ${i + 1} name" value="${escapeAttr(t.name)}">
+      `;
+      teamInputs.appendChild(div);
+    });
+    teamInputs.querySelectorAll('.teamNameInput').forEach(el => {
+      el.addEventListener('input', (e) => {
+        state.teams[+e.target.dataset.idx].name = e.target.value;
+        validateSetup();
+      });
+    });
+    $('removeTeamBtn').disabled = state.teams.length <= 2;
+    $('addTeamBtn').disabled = state.teams.length >= 6;
+  }
+
+  function renderPointsInputs() {
+    pointsInputs.innerHTML = '';
+    state.points.forEach((pt, i) => {
+      const div = document.createElement('div');
+      div.innerHTML = `
+        <label>Round ${i + 1}</label>
+        <input type="number" min="0" step="100" data-idx="${i}" class="pointInput" value="${pt}">
+      `;
+      pointsInputs.appendChild(div);
+    });
+    pointsInputs.querySelectorAll('.pointInput').forEach(el => {
+      el.addEventListener('input', (e) => {
+        state.points[+e.target.dataset.idx] = Math.max(0, parseInt(e.target.value, 10) || 0);
+      });
+    });
+  }
+
+  function escapeAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function validateSetup() {
+    const problems = [];
+    state.puzzles.forEach((p, i) => {
+      if (!p.category.trim() || !p.answer.trim()) problems.push(`Round ${i + 1} puzzle needs a category and answer.`);
+    });
+    const filledTeams = state.teams.filter(t => t.name.trim());
+    if (filledTeams.length < 2) problems.push('At least 2 teams need a name.');
+    validationMsg.textContent = problems.length ? problems[0] : '';
+    $('startGameBtn').disabled = false; // still allow click; we re-validate on click w/ full message
+    return problems;
+  }
+
+  // Tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      $('puzzlesTab').hidden = btn.dataset.tab !== 'puzzles';
+      $('teamsTab').hidden = btn.dataset.tab !== 'teams';
+      $('settingsTab').hidden = btn.dataset.tab !== 'settings';
+    });
+  });
+
+  $('addTeamBtn').addEventListener('click', () => {
+    if (state.teams.length >= 6) return;
+    state.teams.push({ name: `Team ${state.teams.length + 1}`, score: 0 });
+    renderTeamInputs();
+    validateSetup();
+  });
+  $('removeTeamBtn').addEventListener('click', () => {
+    if (state.teams.length <= 2) return;
+    state.teams.pop();
+    renderTeamInputs();
+    validateSetup();
+  });
+
+  $('loadSampleBtn').addEventListener('click', () => {
+    state.puzzles = SAMPLE_PUZZLES.map(p => ({ ...p }));
+    renderPuzzleInputs();
+    validateSetup();
+  });
+
+  revealSpeedInput.addEventListener('input', () => {
+    const v = parseFloat(revealSpeedInput.value);
+    state.revealSpeedMs = Math.max(300, (isNaN(v) ? 2 : v) * 1000);
+  });
+
+  $('startGameBtn').addEventListener('click', () => {
+    const problems = validateSetup();
+    if (problems.length) {
+      validationMsg.textContent = problems[0];
+      return;
+    }
+    state.teams.forEach(t => t.score = 0);
+    state.currentRound = 0;
+    state.winnerTeamIndex = null;
+    goToScreen('game');
+    setupRound(0);
+  });
+
+  /* ================= SCREEN SWITCHING ================= */
+  function goToScreen(name) {
+    setupScreen.hidden = name !== 'setup';
+    gameScreen.hidden = name !== 'game';
+    gameOverScreen.hidden = name !== 'gameover';
+  }
+
+  $('editSetupBtn').addEventListener('click', () => {
+    stopTimer();
+    goToScreen('setup');
+  });
+
+  $('restartBtn').addEventListener('click', () => {
+    if (!confirm('Restart the game? All scores will reset to 0 and Round 1 will begin again (puzzles/settings kept).')) return;
+    stopTimer();
+    state.teams.forEach(t => t.score = 0);
+    state.currentRound = 0;
+    state.winnerTeamIndex = null;
+    goToScreen('game');
+    setupRound(0);
+  });
+
+  $('playAgainBtn').addEventListener('click', () => {
+    state.teams.forEach(t => t.score = 0);
+    state.currentRound = 0;
+    state.winnerTeamIndex = null;
+    goToScreen('game');
+    setupRound(0);
+  });
+
+  $('newSetupBtn').addEventListener('click', () => {
+    goToScreen('setup');
+  });
+
+  /* ================= GAME LOGIC ================= */
+
+  function buildRevealOrder(answer) {
+    // Flat left-to-right order of indices of non-space characters
+    const order = [];
+    for (let i = 0; i < answer.length; i++) {
+      if (answer[i] !== ' ') order.push(i);
+    }
+    return order;
+  }
+
+  function setupRound(roundIdx) {
+    stopTimer();
+    state.currentRound = roundIdx;
+    state.roundPhase = 'ready';
+    state.revealPos = 0;
+    state.lockedOut = new Set();
+    state.activeBuzzTeam = null;
+
+    const puzzle = state.puzzles[roundIdx];
+    state.revealOrder = buildRevealOrder(puzzle.answer.toUpperCase());
+
+    $('roundBadge').textContent = `ROUND ${roundIdx + 1} OF ${state.puzzles.length}`;
+    $('categoryText').textContent = puzzle.category.toUpperCase();
+    $('pointsBadge').textContent = `${state.points[roundIdx].toLocaleString()} PTS`;
+
+    renderBoard();
+    renderScoreboard();
+    renderBuzzGrid();
+    updateProgress();
+    $('solvedFlash').hidden = true;
+
+    $('startRoundBtn').hidden = false;
+    $('pauseResumeBtn').hidden = true;
+    $('revealAnswerBtn').hidden = true;
+    $('nextRoundBtn').hidden = true;
+    $('finishGameBtn').hidden = true;
+    $('judgePanel').hidden = true;
+  }
+
+  function renderBoard() {
+    const board = $('board');
+    board.innerHTML = '';
+    const answer = state.puzzles[state.currentRound].answer.toUpperCase();
+    const words = answer.split(' ').filter(w => w.length > 0);
+
+    // map global char index -> tile element, tracking position across the whole string
+    let globalIdx = 0;
+    const line = document.createElement('div');
+    line.className = 'board-line';
+    words.forEach((word) => {
+      const wg = document.createElement('div');
+      wg.className = 'word-group';
+      for (let c = 0; c < word.length; c++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile blank';
+        tile.dataset.idx = globalIdx;
+        wg.appendChild(tile);
+        globalIdx++; // letter position
+      }
+      line.appendChild(wg);
+      globalIdx++; // account for the space between words
+    });
+    board.appendChild(line);
+  }
+
+  function tileForIndex(idx) {
+    return $('board').querySelector(`.tile[data-idx="${idx}"]`);
+  }
+
+  function revealTileAt(charIdx) {
+    const answer = state.puzzles[state.currentRound].answer.toUpperCase();
+    const tile = tileForIndex(charIdx);
+    if (!tile) return;
+    tile.textContent = answer[charIdx];
+    tile.classList.remove('blank');
+    tile.classList.remove('reveal-anim');
+    // retrigger animation
+    void tile.offsetWidth;
+    tile.classList.add('reveal-anim');
+  }
+
+  function revealAllTiles() {
+    const answer = state.puzzles[state.currentRound].answer.toUpperCase();
+    for (let i = 0; i < answer.length; i++) {
+      if (answer[i] === ' ') continue;
+      const tile = tileForIndex(i);
+      if (tile && tile.classList.contains('blank')) {
+        tile.textContent = answer[i];
+        tile.classList.remove('blank');
+      }
+    }
+  }
+
+  function updateProgress() {
+    const total = state.revealOrder.length || 1;
+    const pct = Math.min(100, Math.round((state.revealPos / total) * 100));
+    $('progressFill').style.width = pct + '%';
+  }
+
+  function renderScoreboard() {
+    const board = $('scoreboard');
+    board.innerHTML = '';
+    const maxScore = Math.max(0, ...state.teams.map(t => t.score));
+    state.teams.forEach((t, i) => {
+      const card = document.createElement('div');
+      let cls = 'score-card';
+      if (t.score === maxScore && maxScore > 0) cls += ' leader';
+      if (state.lockedOut.has(i)) cls += ' locked';
+      if (state.activeBuzzTeam === i) cls += ' buzzed';
+      if (state.winnerTeamIndex === i) cls += ' winner';
+      card.className = cls;
+      card.style.borderTopColor = TEAM_COLORS[i % TEAM_COLORS.length];
+      card.innerHTML = `
+        <div class="name">${escapeHtml(t.name || ('Team ' + (i + 1)))}</div>
+        <div class="pts">${t.score.toLocaleString()}</div>
+        ${state.lockedOut.has(i) ? '<div class="out-tag">OUT THIS PUZZLE</div>' : ''}
+      `;
+      board.appendChild(card);
+    });
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderBuzzGrid() {
+    const grid = $('buzzGrid');
+    grid.innerHTML = '';
+    state.teams.forEach((t, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'buzz-btn';
+      btn.textContent = `🔔 ${t.name || ('Team ' + (i + 1))} BUZZ`;
+      btn.style.borderColor = TEAM_COLORS[i % TEAM_COLORS.length];
+      btn.dataset.idx = i;
+      btn.addEventListener('click', () => onTeamBuzz(i));
+      grid.appendChild(btn);
+    });
+    updateBuzzGridState();
+  }
+
+  function updateBuzzGridState() {
+    const grid = $('buzzGrid');
+    const canBuzz = (state.roundPhase === 'revealing' || state.roundPhase === 'paused');
+    grid.querySelectorAll('.buzz-btn').forEach(btn => {
+      const i = +btn.dataset.idx;
+      const lockedOut = state.lockedOut.has(i);
+      const someoneElseJudging = state.activeBuzzTeam !== null && state.activeBuzzTeam !== i;
+      btn.disabled = !canBuzz || lockedOut || someoneElseJudging;
+      btn.classList.toggle('active-judging', state.activeBuzzTeam === i);
+    });
+  }
+
+  function startTimer() {
+    stopTimer();
+    state.timerId = setInterval(tick, state.revealSpeedMs);
+  }
+  function stopTimer() {
+    if (state.timerId) {
+      clearInterval(state.timerId);
+      state.timerId = null;
+    }
+  }
+
+  function tick() {
+    if (state.revealPos >= state.revealOrder.length) {
+      stopTimer();
+      return;
+    }
+    const charIdx = state.revealOrder[state.revealPos];
+    revealTileAt(charIdx);
+    state.revealPos++;
+    updateProgress();
+    playTickSound();
+    if (state.revealPos >= state.revealOrder.length) {
+      stopTimer();
+    }
+  }
+
+  $('startRoundBtn').addEventListener('click', () => {
+    state.roundPhase = 'revealing';
+    $('startRoundBtn').hidden = true;
+    $('pauseResumeBtn').hidden = false;
+    $('pauseResumeBtn').textContent = '⏸ Pause';
+    $('revealAnswerBtn').hidden = false;
+    startTimer();
+    updateBuzzGridState();
+  });
+
+  $('pauseResumeBtn').addEventListener('click', () => {
+    if (state.roundPhase === 'revealing') {
+      state.roundPhase = 'paused';
+      stopTimer();
+      $('pauseResumeBtn').textContent = '▶ Resume';
+    } else if (state.roundPhase === 'paused') {
+      state.roundPhase = 'revealing';
+      startTimer();
+      $('pauseResumeBtn').textContent = '⏸ Pause';
+    }
+    updateBuzzGridState();
+  });
+
+  function onTeamBuzz(teamIdx) {
+    if (state.roundPhase !== 'revealing' && state.roundPhase !== 'paused') return;
+    if (state.lockedOut.has(teamIdx)) return;
+    if (state.activeBuzzTeam !== null) return;
+
+    state.activeBuzzTeam = teamIdx;
+    state.roundPhase = 'paused';
+    stopTimer();
+    playBuzzSound();
+
+    $('judgeWho').textContent = `${state.teams[teamIdx].name || ('Team ' + (teamIdx + 1))} buzzed in!`;
+    $('judgePanel').hidden = false;
+    $('pauseResumeBtn').hidden = true;
+
+    renderScoreboard();
+    updateBuzzGridState();
+  }
+
+  $('judgeCorrectBtn').addEventListener('click', () => {
+    const teamIdx = state.activeBuzzTeam;
+    if (teamIdx === null) return;
+    const pts = state.points[state.currentRound];
+    state.teams[teamIdx].score += pts;
+    state.winnerTeamIndex = teamIdx;
+    state.roundPhase = 'resolved';
+    state.activeBuzzTeam = null;
+    stopTimer();
+    revealAllTiles();
+    renderScoreboard();
+    updateBuzzGridState();
+    playCorrectSound();
+    launchConfetti();
+    showSolvedFlash(`${state.teams[teamIdx].name || ('Team ' + (teamIdx + 1))} CORRECT! +${pts.toLocaleString()}`);
+
+    $('judgePanel').hidden = true;
+    $('revealAnswerBtn').hidden = true;
+    $('pauseResumeBtn').hidden = true;
+    showRoundEndButton();
+  });
+
+  $('judgeIncorrectBtn').addEventListener('click', () => {
+    const teamIdx = state.activeBuzzTeam;
+    if (teamIdx === null) return;
+    state.lockedOut.add(teamIdx);
+    state.activeBuzzTeam = null;
+    playIncorrectSound();
+    $('judgePanel').hidden = true;
+    renderScoreboard();
+
+    const allLocked = state.lockedOut.size >= state.teams.length;
+    const allRevealed = state.revealPos >= state.revealOrder.length;
+    if (!allLocked && !allRevealed) {
+      state.roundPhase = 'revealing';
+      $('pauseResumeBtn').hidden = false;
+      $('pauseResumeBtn').textContent = '⏸ Pause';
+      startTimer();
+    } else {
+      state.roundPhase = 'paused';
+      $('pauseResumeBtn').hidden = true;
+    }
+    updateBuzzGridState();
+  });
+
+  $('revealAnswerBtn').addEventListener('click', () => {
+    if (state.roundPhase === 'resolved') return;
+    stopTimer();
+    state.roundPhase = 'resolved';
+    state.activeBuzzTeam = null;
+    revealAllTiles();
+    state.winnerTeamIndex = null;
+    renderScoreboard();
+    updateBuzzGridState();
+    $('judgePanel').hidden = true;
+    $('revealAnswerBtn').hidden = true;
+    $('pauseResumeBtn').hidden = true;
+    showRoundEndButton();
+  });
+
+  function showRoundEndButton() {
+    const isLastRound = state.currentRound >= state.puzzles.length - 1;
+    $('nextRoundBtn').hidden = isLastRound;
+    $('finishGameBtn').hidden = !isLastRound;
+  }
+
+  $('nextRoundBtn').addEventListener('click', () => {
+    setupRound(state.currentRound + 1);
+  });
+
+  $('finishGameBtn').addEventListener('click', () => {
+    goToGameOver();
+  });
+
+  function showSolvedFlash(text) {
+    const flash = $('solvedFlash');
+    $('solvedFlashText').textContent = text;
+    flash.hidden = false;
+    setTimeout(() => { flash.hidden = true; }, 1800);
+  }
+
+  function launchConfetti() {
+    const colors = ['#ffd447', '#ff6b6b', '#4dd0e1', '#7ed957', '#c792ea', '#ffffff'];
+    const count = 80;
+    for (let i = 0; i < count; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+      piece.style.animationDuration = (1.8 + Math.random() * 1.4) + 's';
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 3400);
+    }
+  }
+
+  function goToGameOver() {
+    stopTimer();
+    const sorted = state.teams
+      .map((t, i) => ({ ...t, idx: i }))
+      .sort((a, b) => b.score - a.score);
+
+    const topScore = sorted.length ? sorted[0].score : 0;
+    const winners = sorted.filter(t => t.score === topScore);
+    $('winnerName').textContent = winners.length > 1
+      ? `It's a tie! ${winners.map(w => w.name).join(' & ')}`
+      : `${winners[0] ? winners[0].name : ''} Wins!`;
+
+    const finalScores = $('finalScores');
+    finalScores.innerHTML = '';
+    sorted.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'final-score-row' + (i === 0 ? ' first' : '');
+      row.innerHTML = `<span>${i + 1}. ${escapeHtml(t.name)}</span><span>${t.score.toLocaleString()}</span>`;
+      finalScores.appendChild(row);
+    });
+
+    goToScreen('gameover');
+    launchConfetti();
+  }
+
+  /* ================= INIT ================= */
+  renderPuzzleInputs();
+  renderTeamInputs();
+  renderPointsInputs();
+  validateSetup();
+})();
+</script>
+</body>
+</html>
