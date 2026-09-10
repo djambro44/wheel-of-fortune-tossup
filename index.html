@@ -135,6 +135,18 @@
     border-color: var(--gold);
   }
 
+  .preset-select {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 0.5em 0.7em;
+    border-radius: 8px;
+    border: 2px solid var(--panel-border);
+    background: #0a1240;
+    color: #fff;
+  }
+  .preset-select:focus { outline: none; border-color: var(--gold); }
+
   /* ---------- Setup screen ---------- */
   .tabs { display: flex; gap: 8px; }
   .tab-btn {
@@ -405,7 +417,8 @@
     <div class="title-row">
       <h1>🎡 WHEEL OF FORTUNE — TOSS-UP SHOWDOWN</h1>
       <div class="row">
-        <button class="btn btn-outline btn-sm" id="loadSampleBtn">Load Sample Puzzles</button>
+        <select class="preset-select" id="presetSelect"></select>
+        <button class="btn btn-outline btn-sm" id="loadPresetBtn">Load Preset</button>
       </div>
     </div>
 
@@ -511,11 +524,27 @@
     timerId: null
   };
 
-  const SAMPLE_PUZZLES = [
-    { category: 'Around the House', answer: 'KITCHEN TABLE' },
-    { category: 'Movie Title', answer: 'THE GOLDEN COMPASS' },
-    { category: 'Food & Drink', answer: 'PEANUT BUTTER SANDWICH' },
-    { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' }
+  // Named, hardcoded puzzle sets. To add a new preset for a future game,
+  // add another { name, puzzles } entry here and redeploy.
+  const PRESETS = [
+    {
+      name: 'Sample Puzzles',
+      puzzles: [
+        { category: 'Around the House', answer: 'KITCHEN TABLE' },
+        { category: 'Movie Title', answer: 'THE GOLDEN COMPASS' },
+        { category: 'Food & Drink', answer: 'PEANUT BUTTER SANDWICH' },
+        { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' }
+      ]
+    },
+    {
+      name: 'Preset 1',
+      puzzles: [
+        { category: 'What are you doing?', answer: 'A WHOLE LOT OF NOTHING' },
+        { category: 'What are you doing?', answer: 'RELAXING AND UNWINDING' },
+        { category: 'Proper Name', answer: 'MATTHEW MCCONAUGHEY' },
+        { category: 'Phrase', answer: 'PLAYS WELL WITH OTHERS' }
+      ]
+    }
   ];
 
   /* ================= DOM refs ================= */
@@ -617,8 +646,23 @@
     });
   });
 
-  $('loadSampleBtn').addEventListener('click', () => {
-    state.puzzles = SAMPLE_PUZZLES.map(p => ({ ...p }));
+  function populatePresetSelect() {
+    const select = $('presetSelect');
+    select.innerHTML = '';
+    PRESETS.forEach((preset, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = preset.name;
+      select.appendChild(opt);
+    });
+  }
+
+  $('loadPresetBtn').addEventListener('click', () => {
+    const preset = PRESETS[+$('presetSelect').value];
+    if (!preset) return;
+    const hasExistingContent = state.puzzles.some(p => p.category.trim() || p.answer.trim());
+    if (hasExistingContent && !confirm(`Load "${preset.name}"? This will replace your current puzzle entries.`)) return;
+    state.puzzles = preset.puzzles.map(p => ({ ...p }));
     renderPuzzleInputs();
     validateSetup();
   });
@@ -933,6 +977,7 @@
   }
 
   /* ================= INIT ================= */
+  populatePresetSelect();
   renderPuzzleInputs();
   validateSetup();
 })();

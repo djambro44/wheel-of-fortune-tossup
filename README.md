@@ -24,13 +24,31 @@ No backend, no build step, no dependencies — everything runs in the browser in
 1. Download `index.html` (or clone this repo).
 2. Open the file directly in any modern browser (double-click it, or drag it into a browser window). No server required.
 3. On the setup screen:
-   - **Puzzles** tab: enter a category and answer for all 4 rounds (or click "Load Sample Puzzles" to try it out).
+   - **Puzzles** tab: enter a category and answer for all 4 rounds, or pick a saved preset from the dropdown in the top-right and click **Load Preset** to fill them in automatically.
    - **Settings** tab: set the letter-reveal speed.
 4. Click **Start Game**, then **Start Round** to begin revealing letters.
 5. When either player buzzes in (in person — shout it out, raise a hand, physical buzzer, whatever you use), click the **BUZZ IN** button, then mark their guess **Correct** or **Incorrect**. Record the point value manually — the app doesn't track scores or which player buzzed.
 6. Repeat through all 4 rounds.
 
 To project it: mirror or extend your laptop display to the TV/projector — the layout scales up automatically for large screens.
+
+## Adding a new preset
+
+Presets are hardcoded puzzle sets in `index.html`, in the `PRESETS` array near the top of the `<script>` block. To add one for a future game, add another entry:
+
+```js
+{
+  name: 'Preset 2',
+  puzzles: [
+    { category: 'Category text', answer: 'ANSWER TEXT' },
+    { category: 'Category text', answer: 'ANSWER TEXT' },
+    { category: 'Category text', answer: 'ANSWER TEXT' },
+    { category: 'Category text', answer: 'ANSWER TEXT' }
+  ]
+}
+```
+
+then commit and push — it'll show up in the preset dropdown on the setup screen once deployed. Loading a preset only fills in the puzzle fields; those fields can still be freely edited afterward for a one-off change, but edits aren't saved anywhere unless they're added back into this list.
 
 ## Tech
 
