@@ -295,13 +295,6 @@
     gap: 12px;
     align-items: center;
   }
-  .buzz-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
-    width: 100%;
-    max-width: 700px;
-  }
   .buzz-btn {
     font-family: inherit;
     font-weight: 800;
@@ -319,6 +312,13 @@
   .buzz-btn:hover:not(:disabled) { transform: translateY(-2px); background: #16217a; }
   .buzz-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .buzz-btn.active-judging { background: #fff; color: var(--navy-dark); border-color: #fff; }
+  .buzz-btn-solo {
+    width: 100%;
+    max-width: 420px;
+    border-color: var(--gold);
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    padding: 0.9em 1em;
+  }
 
   .judge-panel {
     display: flex;
@@ -434,7 +434,7 @@
       <button class="btn btn-gold" id="startGameBtn" style="font-size:1.2rem; padding:0.8em 2.2em;">▶ Start Game</button>
     </div>
 
-    <footer class="hint">Two players buzz in per round — mark each buzz-in Correct or Incorrect yourself; scoring is kept manually. Runs entirely in your browser — nothing is saved or sent anywhere. Refreshing the page resets the game.</footer>
+    <footer class="hint">One shared Buzz In button per round — mark each buzz-in Correct or Incorrect yourself; scoring is kept manually. Runs entirely in your browser — nothing is saved or sent anywhere. Refreshing the page resets the game.</footer>
   </div>
 
   <!-- ============ GAME SCREEN ============ -->
@@ -459,12 +459,12 @@
 
     <div class="controls">
       <div class="judge-panel" id="judgePanel" hidden>
-        <div class="who" id="judgeWho">Player 1 buzzed in!</div>
+        <div class="who">Buzzed in!</div>
         <button class="btn btn-green" id="judgeCorrectBtn">✔ Correct</button>
         <button class="btn btn-red" id="judgeIncorrectBtn">✘ Incorrect</button>
       </div>
 
-      <div class="buzz-grid" id="buzzGrid"></div>
+      <button class="buzz-btn buzz-btn-solo" id="buzzBtn">🔔 BUZZ IN</button>
 
       <div class="bottom-actions">
         <button class="btn btn-gold" id="startRoundBtn">▶ Start Round</button>
@@ -493,11 +493,6 @@
   'use strict';
 
   /* ================= STATE ================= */
-  const PLAYERS = [
-    { label: 'Player 1', color: '#5b9dff' },
-    { label: 'Player 2', color: '#ff6ec7' }
-  ];
-
   const state = {
     puzzles: [
       { category: '', answer: '' },
@@ -512,8 +507,7 @@
     roundPhase: 'ready', // ready | revealing | paused | resolved
     revealOrder: [],   // array of tile indices in reveal order
     revealPos: 0,      // how many revealed so far
-    lockedOut: new Set(),
-    activePlayer: null,
+    buzzActive: false, // true while a buzz-in is awaiting a Correct/Incorrect judgment
     timerId: null
   };
 
@@ -695,8 +689,7 @@
     state.currentRound = roundIdx;
     state.roundPhase = 'ready';
     state.revealPos = 0;
-    state.lockedOut = new Set();
-    state.activePlayer = null;
+    state.buzzActive = false;
 
     const puzzle = state.puzzles[roundIdx];
     state.revealOrder = buildRevealOrder(puzzle.answer.toUpperCase());
@@ -705,7 +698,7 @@
     $('categoryText').textContent = puzzle.category.toUpperCase();
 
     renderBoard();
-    renderBuzzGrid();
+    updateBuzzButtonState();
     updateProgress();
     $('solvedFlash').hidden = true;
 
@@ -777,31 +770,11 @@
     $('progressFill').style.width = pct + '%';
   }
 
-  function renderBuzzGrid() {
-    const grid = $('buzzGrid');
-    grid.innerHTML = '';
-    PLAYERS.forEach((p, i) => {
-      const btn = document.createElement('button');
-      btn.className = 'buzz-btn';
-      btn.textContent = `🔔 ${p.label} BUZZ`;
-      btn.style.borderColor = p.color;
-      btn.dataset.idx = i;
-      btn.addEventListener('click', () => onPlayerBuzz(i));
-      grid.appendChild(btn);
-    });
-    updateBuzzGridState();
-  }
-
-  function updateBuzzGridState() {
-    const grid = $('buzzGrid');
+  function updateBuzzButtonState() {
+    const btn = $('buzzBtn');
     const canBuzz = (state.roundPhase === 'revealing' || state.roundPhase === 'paused');
-    grid.querySelectorAll('.buzz-btn').forEach(btn => {
-      const i = +btn.dataset.idx;
-      const lockedOut = state.lockedOut.has(i);
-      const someoneElseJudging = state.activePlayer !== null && state.activePlayer !== i;
-      btn.disabled = !canBuzz || lockedOut || someoneElseJudging;
-      btn.classList.toggle('active-judging', state.activePlayer === i);
-    });
+    btn.disabled = !canBuzz || state.buzzActive;
+    btn.classList.toggle('active-judging', state.buzzActive);
   }
 
   function startTimer() {
@@ -837,7 +810,7 @@
     $('pauseResumeBtn').textContent = '⏸ Pause';
     $('revealAnswerBtn').hidden = false;
     startTimer();
-    updateBuzzGridState();
+    updateBuzzButtonState();
   });
 
   $('pauseResumeBtn').addEventListener('click', () => {
@@ -850,37 +823,34 @@
       startTimer();
       $('pauseResumeBtn').textContent = '⏸ Pause';
     }
-    updateBuzzGridState();
+    updateBuzzButtonState();
   });
 
-  function onPlayerBuzz(playerIdx) {
+  $('buzzBtn').addEventListener('click', () => {
     if (state.roundPhase !== 'revealing' && state.roundPhase !== 'paused') return;
-    if (state.lockedOut.has(playerIdx)) return;
-    if (state.activePlayer !== null) return;
+    if (state.buzzActive) return;
 
-    state.activePlayer = playerIdx;
+    state.buzzActive = true;
     state.roundPhase = 'paused';
     stopTimer();
     playBuzzSound();
 
-    $('judgeWho').textContent = `${PLAYERS[playerIdx].label} buzzed in!`;
     $('judgePanel').hidden = false;
     $('pauseResumeBtn').hidden = true;
 
-    updateBuzzGridState();
-  }
+    updateBuzzButtonState();
+  });
 
   $('judgeCorrectBtn').addEventListener('click', () => {
-    const playerIdx = state.activePlayer;
-    if (playerIdx === null) return;
+    if (!state.buzzActive) return;
     state.roundPhase = 'resolved';
-    state.activePlayer = null;
+    state.buzzActive = false;
     stopTimer();
     revealAllTiles();
-    updateBuzzGridState();
+    updateBuzzButtonState();
     playCorrectSound();
     launchConfetti();
-    showSolvedFlash(`${PLAYERS[playerIdx].label} — CORRECT!`);
+    showSolvedFlash('CORRECT!');
 
     $('judgePanel').hidden = true;
     $('revealAnswerBtn').hidden = true;
@@ -889,16 +859,13 @@
   });
 
   $('judgeIncorrectBtn').addEventListener('click', () => {
-    const playerIdx = state.activePlayer;
-    if (playerIdx === null) return;
-    state.lockedOut.add(playerIdx);
-    state.activePlayer = null;
+    if (!state.buzzActive) return;
+    state.buzzActive = false;
     playIncorrectSound();
     $('judgePanel').hidden = true;
 
-    const allLocked = state.lockedOut.size >= PLAYERS.length;
     const allRevealed = state.revealPos >= state.revealOrder.length;
-    if (!allLocked && !allRevealed) {
+    if (!allRevealed) {
       state.roundPhase = 'revealing';
       $('pauseResumeBtn').hidden = false;
       $('pauseResumeBtn').textContent = '⏸ Pause';
@@ -907,16 +874,16 @@
       state.roundPhase = 'paused';
       $('pauseResumeBtn').hidden = true;
     }
-    updateBuzzGridState();
+    updateBuzzButtonState();
   });
 
   $('revealAnswerBtn').addEventListener('click', () => {
     if (state.roundPhase === 'resolved') return;
     stopTimer();
     state.roundPhase = 'resolved';
-    state.activePlayer = null;
+    state.buzzActive = false;
     revealAllTiles();
-    updateBuzzGridState();
+    updateBuzzButtonState();
     $('judgePanel').hidden = true;
     $('revealAnswerBtn').hidden = true;
     $('pauseResumeBtn').hidden = true;
