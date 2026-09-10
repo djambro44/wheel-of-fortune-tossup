@@ -428,7 +428,7 @@
     </div>
 
     <div class="card" id="puzzlesTab">
-      <h2 style="margin-bottom:10px;">Enter the 4 Toss-Up Puzzles</h2>
+      <h2 style="margin-bottom:10px;">Enter the 4 Toss-Up Puzzles + 1 Emergency Puzzle</h2>
       <div class="setup-grid" id="puzzleInputs"></div>
     </div>
 
@@ -484,6 +484,7 @@
         <button class="btn btn-outline" id="pauseResumeBtn" hidden>⏸ Pause</button>
         <button class="btn btn-outline" id="revealAnswerBtn" hidden>👁 Reveal Answer</button>
         <button class="btn btn-green" id="nextRoundBtn" hidden>Next Round ▶</button>
+        <button class="btn btn-outline" id="playEmergencyRoundBtn" hidden>🆘 Play Round 5 (Emergency)</button>
         <button class="btn btn-green" id="finishGameBtn" hidden>Finish Game 🏁</button>
       </div>
     </div>
@@ -506,8 +507,14 @@
   'use strict';
 
   /* ================= STATE ================= */
+  // The game normally plays 4 rounds. A 5th "emergency" puzzle is kept
+  // ready in case something goes wrong with one of the first 4 — the
+  // host can choose to play it after Round 4, or skip it and finish.
+  const NORMAL_ROUNDS = 4;
+
   const state = {
     puzzles: [
+      { category: '', answer: '' },
       { category: '', answer: '' },
       { category: '', answer: '' },
       { category: '', answer: '' },
@@ -533,7 +540,8 @@
         { category: 'Around the House', answer: 'KITCHEN TABLE' },
         { category: 'Movie Title', answer: 'THE GOLDEN COMPASS' },
         { category: 'Food & Drink', answer: 'PEANUT BUTTER SANDWICH' },
-        { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' }
+        { category: 'Phrase', answer: 'BETTER LATE THAN NEVER' },
+        { category: 'Food & Drink', answer: 'CHOCOLATE CHIP COOKIES' }
       ]
     },
     {
@@ -542,7 +550,8 @@
         { category: 'What are you doing?', answer: 'A WHOLE LOT OF NOTHING' },
         { category: 'What are you doing?', answer: 'RELAXING AND UNWINDING' },
         { category: 'Proper Name', answer: 'MATTHEW MCCONAUGHEY' },
-        { category: 'Phrase', answer: 'PLAYS WELL WITH OTHERS' }
+        { category: 'Phrase', answer: 'PLAYS WELL WITH OTHERS' },
+        { category: 'Food & Drink', answer: 'BREAKFAST TACOS' }
       ]
     }
   ];
@@ -601,7 +610,7 @@
       const div = document.createElement('div');
       div.className = 'card puzzle-card';
       div.innerHTML = `
-        <span class="badge">ROUND ${i + 1}</span>
+        <span class="badge">${i < NORMAL_ROUNDS ? `ROUND ${i + 1}` : 'ROUND 5 (EMERGENCY)'}</span>
         <label>Category</label>
         <input type="text" data-idx="${i}" class="categoryInput" placeholder="e.g. Around the House" value="${escapeAttr(p.category)}">
         <label>Answer</label>
@@ -738,7 +747,9 @@
     const puzzle = state.puzzles[roundIdx];
     state.revealOrder = buildRevealOrder(puzzle.answer.toUpperCase());
 
-    $('roundBadge').textContent = `ROUND ${roundIdx + 1} OF ${state.puzzles.length}`;
+    $('roundBadge').textContent = roundIdx < NORMAL_ROUNDS
+      ? `ROUND ${roundIdx + 1} OF ${NORMAL_ROUNDS}`
+      : 'EMERGENCY ROUND';
     $('categoryText').textContent = puzzle.category.toUpperCase();
 
     renderBoard();
@@ -750,6 +761,7 @@
     $('pauseResumeBtn').hidden = true;
     $('revealAnswerBtn').hidden = true;
     $('nextRoundBtn').hidden = true;
+    $('playEmergencyRoundBtn').hidden = true;
     $('finishGameBtn').hidden = true;
     $('judgePanel').hidden = true;
   }
@@ -935,13 +947,19 @@
   });
 
   function showRoundEndButton() {
-    const isLastRound = state.currentRound >= state.puzzles.length - 1;
-    $('nextRoundBtn').hidden = isLastRound;
-    $('finishGameBtn').hidden = !isLastRound;
+    const isLastNormalRound = state.currentRound === NORMAL_ROUNDS - 1;
+    const isBeforeLastNormalRound = state.currentRound < NORMAL_ROUNDS - 1;
+    $('nextRoundBtn').hidden = !isBeforeLastNormalRound;
+    $('playEmergencyRoundBtn').hidden = !isLastNormalRound;
+    $('finishGameBtn').hidden = isBeforeLastNormalRound;
   }
 
   $('nextRoundBtn').addEventListener('click', () => {
     setupRound(state.currentRound + 1);
+  });
+
+  $('playEmergencyRoundBtn').addEventListener('click', () => {
+    setupRound(NORMAL_ROUNDS);
   });
 
   $('finishGameBtn').addEventListener('click', () => {
