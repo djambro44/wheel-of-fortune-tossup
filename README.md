@@ -1,20 +1,19 @@
 # Wheel of Fortune: Toss-Up Showdown
 
-A single-page, single-HTML-file recreation of Wheel of Fortune's "Toss-Up" round, built for in-person team building events. Run it on a laptop, mirror it to a TV or projector, and use it to host a 4-round buzz-in trivia game between 2-10 teams.
+A single-page, single-HTML-file recreation of Wheel of Fortune's "Toss-Up" round, built for in-person team building events. Run it on a laptop, mirror it to a TV or projector, and use it to host a 4-round buzz-in game between two on-stage players per round.
 
 No backend, no build step, no dependencies — everything runs in the browser in memory.
 
 ## Features
 
 - 4 rounds, one puzzle (category + answer) per round
-- 2-10 teams with editable names
-- Letters reveal one at a time on a customizable timer
-- Any team can buzz in at any point after reveal starts
+- Two buzz-in controls per round — Player 1 / Player 2 — for whichever two reps are on stage that round
+- Letters reveal one at a time, in random order, on a customizable timer
+- Either player can buzz in at any point after reveal starts
 - Host manually judges each buzz-in as Correct/Incorrect
-  - Correct: awards that round's points, reveals the full answer, confetti + sound
-  - Incorrect: locks that team out for the rest of the puzzle; others can keep buzzing
-- Configurable point values per round
-- Live running scoreboard
+  - Correct: reveals the full answer, confetti + flash + sound
+  - Incorrect: locks that player out for the rest of the puzzle; the other player can keep buzzing
+- Scoring is not tracked by the app — the game master keeps score manually across all teams
 - "Reveal Answer" button for when nobody solves it
 - Restart game or jump back into setup at any time
 - Classic dark blue / gold Wheel of Fortune board styling with flip-in letter tiles
@@ -26,11 +25,10 @@ No backend, no build step, no dependencies — everything runs in the browser in
 2. Open the file directly in any modern browser (double-click it, or drag it into a browser window). No server required.
 3. On the setup screen:
    - **Puzzles** tab: enter a category and answer for all 4 rounds (or click "Load Sample Puzzles" to try it out).
-   - **Teams** tab: set 2-6 team names.
-   - **Settings** tab: set point values per round and the letter-reveal speed.
+   - **Settings** tab: set the letter-reveal speed.
 4. Click **Start Game**, then **Start Round** to begin revealing letters.
-5. When a team buzzes in (in person — shout it out, raise a hand, physical buzzer, whatever you use), click that team's "BUZZ" button on screen, then mark their guess **Correct** or **Incorrect**.
-6. Repeat through all 4 rounds. Final scores and the winner are shown at the end.
+5. When a player buzzes in (in person — shout it out, raise a hand, physical buzzer, whatever you use), click that side's "BUZZ" button on screen, then mark their guess **Correct** or **Incorrect**. Record the point value manually — the app doesn't track scores.
+6. Repeat through all 4 rounds.
 
 To project it: mirror or extend your laptop display to the TV/projector — the layout scales up automatically for large screens.
 
